@@ -34,6 +34,7 @@ def fetch_stock_data_by_symbol(symbol):
             continue
 
         row_symbol = cols[1].text.strip()
+        print(f"Processing symbol: {row_symbol}")  # Debug logging
 
         if row_symbol.upper() == symbol.upper():
             day_high = cols[4].text.strip()
