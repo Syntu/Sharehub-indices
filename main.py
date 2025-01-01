@@ -12,10 +12,11 @@ load_dotenv()
 # Function to fetch stock data
 def fetch_stock_data_by_symbol(symbol):
     url = "https://nepse.ct.ws/"
-    response = requests.get(url)
-    
-    if response.status_code != 200:
-        print("Error: Unable to fetch data from Syntoo. Status code:", response.status_code)
+    try:
+        response = requests.get(url, timeout=10)  # Added timeout
+        response.raise_for_status()  # Raise HTTPError for bad responses
+    except requests.exceptions.RequestException as e:
+        print(f"Error: {e}")
         return None
 
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -24,11 +25,14 @@ def fetch_stock_data_by_symbol(symbol):
     if not table:
         print("Error: No table found in the response.")
         return None
-    
+
     rows = table.find_all('tr')[1:]
 
     for row in rows:
         cols = row.find_all('td')
+        if len(cols) < 13:  # Ensure there are enough columns
+            continue
+
         row_symbol = cols[1].text.strip()
 
         if row_symbol.upper() == symbol.upper():
@@ -45,9 +49,9 @@ def fetch_stock_data_by_symbol(symbol):
 
             # Handle color for change percentage
             if "-" in change_percent:
-                change_percent = f"<b>{change_percent}%</b>"  # Red
+                change_percent = f"<b><span style='color:red;'>{change_percent}%</span></b>"
             elif "+" in change_percent:
-                change_percent = f"<b>{change_percent}%</b>"  # Green
+                change_percent = f"<b><span style='color:green;'>{change_percent}%</span></b>"
             else:
                 change_percent = f"<b>{change_percent}%</b>"
 
@@ -62,7 +66,7 @@ def fetch_stock_data_by_symbol(symbol):
                 '52 Week High': week_52_high,
                 '52 Week Low': week_52_low,
                 'Down From High': down_from_high,
-                'Up From Low': up_from_low
+                'Up From Low': up_from_low,
             }
     return None
 
@@ -97,7 +101,7 @@ async def handle_stock_symbol(update: Update, context: ContextTypes.DEFAULT_TYPE
     else:
         response = (
             f"Symbol '{symbol}'\n"
-            "ल्या, फेला परेन त 🤗🤗।\n"
+            "ल्याः, फेला परेन त 🤗🤗।\n"
             "Symbol को Spelling मिलेन कि कारोबार बन्द छ?\n"
             "फेरि कोसिस गर्नुस।"
         )
@@ -116,4 +120,4 @@ if __name__ == "__main__":
 
     # Start polling
     print("Starting polling...")
-    application.run_polling()  # Ensure your app is running here and will continue to listen for messages
+    application.run_polling()
