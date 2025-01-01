@@ -11,12 +11,11 @@ load_dotenv()
 
 # Function to fetch stock data
 def fetch_stock_data_by_symbol(symbol):
-    url = "https://nepse.ct.ws/"
-    try:
-        response = requests.get(url, timeout=10)  # Added timeout
-        response.raise_for_status()  # Raise HTTPError for bad responses
-    except requests.exceptions.RequestException as e:
-        print(f"Error: {e}")
+    url = "https://www.sharesansar.com/today-share-price"
+    response = requests.get(url)
+    
+    if response.status_code != 200:
+        print("Error: Unable to fetch data from Sharesansar. Status code:", response.status_code)
         return None
 
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -25,36 +24,34 @@ def fetch_stock_data_by_symbol(symbol):
     if not table:
         print("Error: No table found in the response.")
         return None
-
+    
     rows = table.find_all('tr')[1:]
 
     for row in rows:
         cols = row.find_all('td')
-        if len(cols) < 13:  # Ensure there are enough columns
-            continue
-
         row_symbol = cols[1].text.strip()
-        print(f"Processing symbol: {row_symbol}")  # Debug logging
 
         if row_symbol.upper() == symbol.upper():
             day_high = cols[4].text.strip()
             day_low = cols[5].text.strip()
             closing_price = cols[6].text.strip()
-            change_percent = cols[3].text.strip()
-            volume = cols[7].text.strip()
-            turnover = cols[8].text.strip()
-            week_52_high = cols[9].text.strip()
-            week_52_low = cols[10].text.strip()
-            down_from_high = cols[11].text.strip()
-            up_from_low = cols[12].text.strip()
+            change_percent = cols[14].text.strip()
+            volume = cols[8].text.strip()
+            turnover = cols[10].text.strip()
+            week_52_high = cols[19].text.strip()
+            week_52_low = cols[20].text.strip()
 
-            # Handle color for change percentage
-            if "-" in change_percent:
-                change_percent = f"<b><span style='color:red;'>{change_percent}%</span></b>"
-            elif "+" in change_percent:
-                change_percent = f"<b><span style='color:green;'>{change_percent}%</span></b>"
-            else:
-                change_percent = f"<b>{change_percent}%</b>"
+            # Calculating Down From High and Up From Low
+            try:
+                down_from_high = (
+                    (float(week_52_high) - float(closing_price)) / float(week_52_high) * 100
+                )
+                up_from_low = (
+                    (float(closing_price) - float(week_52_low)) / float(week_52_low) * 100
+                )
+            except ValueError:
+                down_from_high = "N/A"
+                up_from_low = "N/A"
 
             return {
                 'Symbol': symbol,
@@ -66,17 +63,17 @@ def fetch_stock_data_by_symbol(symbol):
                 'Turnover': turnover,
                 '52 Week High': week_52_high,
                 '52 Week Low': week_52_low,
-                'Down From High': down_from_high,
-                'Up From Low': up_from_low,
+                'Down From High': f"{down_from_high:.2f}%" if isinstance(down_from_high, float) else down_from_high,
+                'Up From Low': f"{up_from_low:.2f}%" if isinstance(up_from_low, float) else up_from_low
             }
     return None
 
 # Start command handler
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     welcome_message = (
-        "Welcome to Syntoo's NEPSE BOT\n"
-        "के को डाटा चाहियो, सिम्बोल दिनुहोस्।\n"
-        "जस्तै: SHINE, SCB, SWBBL, SHPC"
+        "Welcome to Syntu's NEPSE BOT\n"
+        "कृपया स्टकको सिम्बोल दिनुहोस्।\n"
+        "उदाहरण: SHINE, SCB, SWBBL, SHPC"
     )
     await update.message.reply_text(welcome_message)
 
@@ -100,12 +97,7 @@ async def handle_stock_symbol(update: Update, context: ContextTypes.DEFAULT_TYPE
             f"Up From Low: {data['Up From Low']}\n"
         )
     else:
-        response = (
-            f"Symbol '{symbol}'\n"
-            "ल्याः, फेला परेन त 🤗🤗।\n"
-            "Symbol को Spelling मिलेन कि कारोबार बन्द छ?\n"
-            "फेरि कोसिस गर्नुस।"
-        )
+        response = f"""Symbol '{symbol}' फेला परेन। कृपया सही सिम्बोल दिनुहोस्।"""
     await update.message.reply_text(response, parse_mode=ParseMode.HTML)
 
 # Main function to set up the bot and run polling
