@@ -11,11 +11,11 @@ load_dotenv()
 
 # Function to fetch stock data
 def fetch_stock_data_by_symbol(symbol):
-    url = "https://www.sharesansar.com/today-share-price"
+    url = "https://nepse.ct.ws/"
     response = requests.get(url)
     
     if response.status_code != 200:
-        print("Error: Unable to fetch data from Sharesansar. Status code:", response.status_code)
+        print("Error: Unable to fetch data from Syntoo. Status code:", response.status_code)
         return None
 
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -35,11 +35,13 @@ def fetch_stock_data_by_symbol(symbol):
             day_high = cols[4].text.strip()
             day_low = cols[5].text.strip()
             closing_price = cols[6].text.strip()
-            change_percent = cols[14].text.strip()
-            volume = cols[8].text.strip()
-            turnover = cols[10].text.strip()
-            week_52_high = cols[19].text.strip()
-            week_52_low = cols[20].text.strip()
+            change_percent = cols[3].text.strip()
+            volume = cols[7].text.strip()
+            turnover = cols[8].text.strip()
+            week_52_high = cols[9].text.strip()
+            week_52_low = cols[10].text.strip()
+            down_from_high = cols[11].text.strip()
+            up_from_low = cols[12].text.strip()
 
             # Handle color for change percentage
             if "-" in change_percent:
@@ -58,16 +60,18 @@ def fetch_stock_data_by_symbol(symbol):
                 'Volume': volume,
                 'Turnover': turnover,
                 '52 Week High': week_52_high,
-                '52 Week Low': week_52_low
+                '52 Week Low': week_52_low,
+                'Down From High': down_from_high,
+                'Up From Low': up_from_low
             }
     return None
 
 # Start command handler
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     welcome_message = (
-        "Welcome to Syntu's NEPSE BOT\n"
-        "कृपया स्टकको सिम्बोल दिनुहोस्।\n"
-        "उदाहरण: SHINE, SCB, SWBBL, SHPC"
+        "Welcome to Syntoo's NEPSE BOT\n"
+        "के को डाटा चाहियो, सिम्बोल दिनुहोस्।\n"
+        "जस्तै: SHINE, SCB, SWBBL, SHPC"
     )
     await update.message.reply_text(welcome_message)
 
@@ -86,13 +90,17 @@ async def handle_stock_symbol(update: Update, context: ContextTypes.DEFAULT_TYPE
             f"52 Week High: {data['52 Week High']}\n"
             f"52 Week Low: {data['52 Week Low']}\n"
             f"Volume: {data['Volume']}\n"
-            f"Turnover: {data['Turnover']}"
+            f"Turnover: {data['Turnover']}\n"
+            f"Down From High: {data['Down From High']}\n"
+            f"Up From Low: {data['Up From Low']}\n"
         )
     else:
-        response = f"""Symbol '{symbol}'
-        लौ जा, फेला परेन त 🤗🤗।
-        कि Symbol को Spelling मिलेन ?
-        अझै Try गर्नुस।"""
+        response = (
+            f"Symbol '{symbol}'\n"
+            "ल्या, फेला परेन त 🤗🤗।\n"
+            "Symbol को Spelling मिलेन कि कारोबार बन्द छ?\n"
+            "फेरि कोसिस गर्नुस।"
+        )
     await update.message.reply_text(response, parse_mode=ParseMode.HTML)
 
 # Main function to set up the bot and run polling
