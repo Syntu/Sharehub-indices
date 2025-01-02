@@ -32,18 +32,27 @@ def fetch_stock_data_by_symbol(symbol):
         row_symbol = cols[1].text.strip()
 
         if row_symbol.upper() == symbol.upper():
-            day_high = float(cols[4].text.strip())
-            day_low = float(cols[5].text.strip())
-            closing_price = float(cols[6].text.strip())
-            change_percent = cols[14].text.strip()
-            volume = cols[8].text.strip()
-            turnover = cols[10].text.strip()
-            week_52_high = float(cols[19].text.strip())
-            week_52_low = float(cols[20].text.strip())
+            try:
+                day_high = float(cols[4].text.strip().replace(',', ''))
+                day_low = float(cols[5].text.strip().replace(',', ''))
+                closing_price = float(cols[6].text.strip().replace(',', ''))
+                change_percent = cols[14].text.strip()
+                volume = cols[8].text.strip()
+                turnover = cols[10].text.strip()
+                week_52_high = float(cols[19].text.strip().replace(',', ''))
+                week_52_low = float(cols[20].text.strip().replace(',', ''))
 
-            # Calculate Down From High and Up From Low
-            down_from_high = round(((week_52_high - closing_price) / week_52_high) * 100, 2)
-            up_from_low = round(((closing_price - week_52_low) / week_52_low) * 100, 2)
+                # Calculate Down From High and Up From Low
+                down_from_high = round(((week_52_high - closing_price) / week_52_high) * 100, 2)
+                up_from_low = round(((closing_price - week_52_low) / week_52_low) * 100, 2)
+
+            except (ValueError, IndexError) as e:
+                # Handle missing or invalid data
+                print(f"Data processing error for symbol {symbol}: {e}")
+                week_52_high = "NA"
+                week_52_low = "NA"
+                down_from_high = "NA"
+                up_from_low = "NA"
 
             # Handle color for change percentage
             if "-" in change_percent:
