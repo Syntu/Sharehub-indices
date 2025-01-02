@@ -2,8 +2,8 @@ name: Auto Commit
 
 on:
   schedule:
-    - cron: '*/15 * * * *'  # Every 15 minutes
-  workflow_dispatch:  # Allows manual triggering of the workflow
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
 
 jobs:
   commit:
@@ -12,11 +12,11 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+      with:
+        ref: main  # Default branch सेट गर्नुहोस्
 
     - name: Set up Git
       run: |
-        echo "GIT_USER_NAME=${{ secrets.GIT_USER_NAME }}" >> $GITHUB_ENV
-        echo "GIT_USER_EMAIL=${{ secrets.GIT_USER_EMAIL }}" >> $GITHUB_ENV
         git config user.name "${{ secrets.GIT_USER_NAME }}"
         git config user.email "${{ secrets.GIT_USER_EMAIL }}"
 
@@ -24,4 +24,9 @@ jobs:
       run: |
         git add .
         git commit -m "Auto commit" || echo "No changes to commit"
+
+    - name: Push changes
+      run: |
         git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
