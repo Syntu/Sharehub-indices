@@ -113,7 +113,7 @@ def fetch_stock_data(symbol):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     welcome_message = (
         "Welcome 🙏 to Syntoo's NEPSE BOT💗\n"
-        "कृपया स्टकको सिम्बोल दिनुहोस्।\n"
+        "के को डाटा चाहियो? Symbol दिनुस।\n"
         "उदाहरण: SHINE, SCB, SWBBL, SHPC"
     )
     await update.message.reply_text(welcome_message)
