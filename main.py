@@ -84,7 +84,7 @@ def fetch_stock_data_by_symbol(symbol):
 # Start command handler
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     welcome_message = (
-        "Welcome to Syntoo's NEPSE BOT\n"
+        "Welcome 🙏 to Syntoo's NEPSE BOT💗\n"
         "कृपया स्टकको सिम्बोल दिनुहोस्।\n"
         "उदाहरण: SHINE, SCB, SWBBL, SHPC"
     )
@@ -111,9 +111,10 @@ async def handle_stock_symbol(update: Update, context: ContextTypes.DEFAULT_TYPE
             "Thank you for using my bot. Please share it with your friends and groups."
         )
     else:
-        response = f"""Symbol '{symbol}' ल्या, फेला परेन त 🤗🤗।
-        Symbol राम्रो सङ्ग फेरि हान्नुस त।
-        कारोबार बन्द नभएको भए आउँछ डाटा 🤗। """
+        response = f"""Symbol '{symbol}' 
+        ल्या, फेला परेन त 🤗🤗।
+        Symbol राम्रो सङ्ग फेरि हान्नुस है।
+        कि कारोबार बन्द छ? 🤗। """
 
     await update.message.reply_text(response, parse_mode=ParseMode.HTML)
 
