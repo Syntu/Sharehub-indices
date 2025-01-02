@@ -142,7 +142,7 @@ async def handle_stock_symbol(update: Update, context: ContextTypes.DEFAULT_TYPE
         response = f"""Symbol '{symbol}' 
         ल्या, फेला परेन त 🤗🤗।
         Symbol राम्रो सङ्ग फेरि हान्नुस है।
-        कि कारोबार बन्द छ? 🤗। """
+        कि कारोबार भएको छैन? 🤗। """
 
     await update.message.reply_text(response, parse_mode=ParseMode.HTML)
 
