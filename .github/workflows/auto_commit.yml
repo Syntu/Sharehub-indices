@@ -17,10 +17,23 @@ jobs:
         git config --global user.email "apfsantosh@gmail.com"
         git config --global user.name "Syntu"
 
-    - name: Push changes
-      env:
-        ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+    - name: Check for changes
+      id: check_changes
+      run: |
+        if git diff --exit-code; then
+          echo "No changes to commit"
+          exit 0
+        fi
+
+    - name: Add and Commit changes
+      if: steps.check_changes.outcome != 'success'
       run: |
         git add .
         git commit -m "Your commit message"
+
+    - name: Push changes
+      if: steps.check_changes.outcome != 'success'
+      env:
+        ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+      run: |
         git push https://x-access-token:${{ secrets.ACTIONS_DEPLOY_KEY }}@github.com/Syntu/Copy-Working.git
