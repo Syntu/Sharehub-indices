@@ -1,20 +1,18 @@
-name: Auto Commit  # Workflow को नाम
+name: Auto Commit
 
 on:
   schedule:
-    - cron: '*/15 * * * *'  # यो workflow प्रत्येक 15 मिनेटमा चल्छ।
-  workflow_dispatch:  # म्यानुअल रूपमा workflow चलाउन मिल्ने विकल्प।
+    - cron: '*/15 * * * *'  # Every 15 minutes
+  workflow_dispatch:  # Allows manual triggering of the workflow
 
 jobs:
   commit:
-    runs-on: ubuntu-latest  # यो workflow Ubuntu server मा चल्छ।
+    runs-on: ubuntu-latest
 
     steps:
-    # Step 1: Checkout the code
     - name: Checkout code
-      uses: actions/checkout@v2  # Repository checkout गर्न official action प्रयोग।
+      uses: actions/checkout@v2
 
-    # Step 2: Git Setup
     - name: Set up Git
       run: |
         echo "GIT_USER_NAME=${{ secrets.GIT_USER_NAME }}" >> $GITHUB_ENV
@@ -22,9 +20,8 @@ jobs:
         git config user.name "${{ secrets.GIT_USER_NAME }}"
         git config user.email "${{ secrets.GIT_USER_EMAIL }}"
 
-    # Step 3: Commit changes
     - name: Commit changes
       run: |
-        git add .  # सबै फाइल stage मा राख्ने।
-        git commit -m "Auto commit" || echo "No changes to commit"  # परिवर्तन भए commit गर्ने।
-        git push  # Repository मा परिवर्तन push गर्ने।
+        git add .
+        git commit -m "Auto commit" || echo "No changes to commit"
+        git push
