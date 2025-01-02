@@ -1,32 +1,26 @@
-name: Auto Commit
+name: Deploy
 
 on:
-  schedule:
-    - cron: '*/15 * * * *'
-  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
-  commit:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
+    - name: Checkout repository
       uses: actions/checkout@v2
-      with:
-        ref: main  # Default branch सेट गर्नुहोस्
 
     - name: Set up Git
       run: |
-        git config user.name "${{ secrets.GIT_USER_NAME }}"
-        git config user.email "${{ secrets.GIT_USER_EMAIL }}"
-
-    - name: Commit changes
-      run: |
-        git add .
-        git commit -m "Auto commit" || echo "No changes to commit"
+        git config --global user.email "apfsantosh@gmail.com"
+        git config --global user.name "Syntu"
 
     - name: Push changes
-      run: |
-        git push
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+      run: |
+        git add .
+        git commit -m "Your commit message"
+        git push https://x-access-token:${{ secrets.ACTIONS_DEPLOY_KEY }}@github.com/Syntu/Copy-Working.git
