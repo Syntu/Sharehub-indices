@@ -111,8 +111,9 @@ async def handle_stock_symbol(update: Update, context: ContextTypes.DEFAULT_TYPE
             "Thank you for using my bot. Please share it with your friends and groups."
         )
     else:
-        response = f"""Symbol '{symbol}' not found, please try again later. 🧐
-        Symbol not recognized? Please check the spelling or use a valid stock symbol."""
+        response = f"""Symbol '{symbol}' ल्या, फेला परेन त 🤗🤗।
+        Symbol राम्रो सङ्ग फेरि हान्नुस त।
+        कारोबार बन्द नभएको भए आउँछ डाटा 🤗। """
 
     await update.message.reply_text(response, parse_mode=ParseMode.HTML)
 
