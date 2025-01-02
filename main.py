@@ -32,26 +32,26 @@ def fetch_stock_data_by_symbol(symbol):
         row_symbol = cols[1].text.strip()
 
         if row_symbol.upper() == symbol.upper():
-            day_high = cols[4].text.strip()
-            day_low = cols[5].text.strip()
-            closing_price = cols[6].text.strip()
+            day_high = float(cols[4].text.strip())
+            day_low = float(cols[5].text.strip())
+            closing_price = float(cols[6].text.strip())
             change_percent = cols[14].text.strip()
             volume = cols[8].text.strip()
             turnover = cols[10].text.strip()
-            week_52_high = cols[19].text.strip()
-            week_52_low = cols[20].text.strip()
+            week_52_high = float(cols[19].text.strip())
+            week_52_low = float(cols[20].text.strip())
 
-            # Calculating Down From High and Up From Low
-            try:
-                down_from_high = (
-                    (float(week_52_high) - float(closing_price)) / float(week_52_high) * 100
-                )
-                up_from_low = (
-                    (float(closing_price) - float(week_52_low)) / float(week_52_low) * 100
-                )
-            except ValueError:
-                down_from_high = "N/A"
-                up_from_low = "N/A"
+            # Calculate Down From High and Up From Low
+            down_from_high = round(((week_52_high - closing_price) / week_52_high) * 100, 2)
+            up_from_low = round(((closing_price - week_52_low) / week_52_low) * 100, 2)
+
+            # Handle color for change percentage
+            if "-" in change_percent:
+                change_percent = f"<b>{change_percent}%</b>"  # Red
+            elif "+" in change_percent:
+                change_percent = f"<b>{change_percent}%</b>"  # Green
+            else:
+                change_percent = f"<b>{change_percent}%</b>"
 
             return {
                 'Symbol': symbol,
@@ -63,8 +63,8 @@ def fetch_stock_data_by_symbol(symbol):
                 'Turnover': turnover,
                 '52 Week High': week_52_high,
                 '52 Week Low': week_52_low,
-                'Down From High': f"{down_from_high:.2f}%" if isinstance(down_from_high, float) else down_from_high,
-                'Up From Low': f"{up_from_low:.2f}%" if isinstance(up_from_low, float) else up_from_low
+                'Down From High': down_from_high,
+                'Up From Low': up_from_low
             }
     return None
 
@@ -93,11 +93,14 @@ async def handle_stock_symbol(update: Update, context: ContextTypes.DEFAULT_TYPE
             f"52 Week Low: {data['52 Week Low']}\n"
             f"Volume: {data['Volume']}\n"
             f"Turnover: {data['Turnover']}\n"
-            f"Down From High: {data['Down From High']}\n"
-            f"Up From Low: {data['Up From Low']}\n"
+            f"Down From High: {data['Down From High']}%\n"
+            f"Up From Low: {data['Up From Low']}%"
         )
     else:
-        response = f"""Symbol '{symbol}' फेला परेन। कृपया सही सिम्बोल दिनुहोस्।"""
+        response = f"""Symbol '{symbol}'
+        लौ जा, फेला परेन त 🤗🤗।
+        कि Symbol को Spelling मिलेन ?
+        अझै Try गर्नुस।"""
     await update.message.reply_text(response, parse_mode=ParseMode.HTML)
 
 # Main function to set up the bot and run polling
