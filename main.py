@@ -122,11 +122,11 @@ async def handle_stock_symbol(update: Update, context: ContextTypes.DEFAULT_TYPE
             f"Volume: {data['Volume']}\n"
             f"Turnover: {data['Turnover']}\n"
             f"Down From High: {data['Down From High (%)']}%\n"
-            f"Up From Low: {data['Up From Low (%)']}%\n"
-            f"Recommendation : {data['Please keep using my bot and share with your friends']}%"
+            f"Up From Low: {data['Up From Low (%)']}%\n\n"
+            f"Thank you for using my bot.\nPlease share with your friends and group."
         )
     else:
-        response = f"""Symbol '{symbol}'\n\nल्या, फेला परेन त हौं।🤗🤗\nSymbol मिलेन कि कारोबार बन्द छ?\nफेरि कोसिस गर्नुस त।"""
+        response = f"""Symbol '{symbol}'\n\nल्या, फेला परेन त हौं।🤗🤗\nSymbol मिलेन कि कारोबार बन्द छ?\nकृपया पुन: प्रयास गर्नुहोस💓।"""
     await update.message.reply_text(response, parse_mode=ParseMode.HTML)
 
 # Main function to set up the bot and run polling
