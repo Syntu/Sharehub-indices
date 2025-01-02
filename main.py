@@ -1,6 +1,7 @@
 import os
 import requests
 from bs4 import BeautifulSoup
+from flask import Flask, request
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 from telegram.constants import ParseMode
@@ -9,91 +10,75 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Function to scrape live trading data
-def scrape_live_trading():
-    url = "https://www.sharesansar.com/live-trading"
-    response = requests.get(url)
-    soup = BeautifulSoup(response.content, "html.parser")
-    rows = soup.find_all("tr")
-    data = []
-    for row in rows:
-        cells = row.find_all("td")
-        if len(cells) > 1:
-            data.append({
-                "Symbol": cells[1].text.strip(),
-                "LTP": cells[2].text.strip().replace(",", ""),
-                "Change%": cells[4].text.strip(),
-                "Day High": cells[6].text.strip().replace(",", ""),
-                "Day Low": cells[7].text.strip().replace(",", ""),
-                "Previous Close": cells[9].text.strip().replace(",", ""),
-                "Volume": cells[8].text.strip().replace(",", "")
-            })
-    return data
+# Initialize Flask application
+app = Flask(__name__)
 
-# Function to scrape today's share price summary
-def scrape_today_share_price():
+# Function to fetch stock data
+def fetch_stock_data_by_symbol(symbol):
     url = "https://www.sharesansar.com/today-share-price"
     response = requests.get(url)
-    soup = BeautifulSoup(response.content, "html.parser")
-    rows = soup.find_all("tr")
-    data = []
+    
+    if response.status_code != 200:
+        print("Error: Unable to fetch data from Sharesansar. Status code:", response.status_code)
+        return None
+
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    table = soup.find('table')
+    if not table:
+        print("Error: No table found in the response.")
+        return None
+    
+    rows = table.find_all('tr')[1:]
+
     for row in rows:
-        cells = row.find_all("td")
-        if len(cells) > 1:
-            data.append({
-                "SN": cells[0].text.strip(),
-                "Symbol": cells[1].text.strip(),
-                "Turnover": cells[10].text.strip().replace(",", ""),
-                "52 Week High": cells[19].text.strip().replace(",", ""),
-                "52 Week Low": cells[20].text.strip().replace(",", "")
-            })
-    return data
+        cols = row.find_all('td')
+        row_symbol = cols[1].text.strip()
 
-# Function to merge live and today's data
-def merge_data(live_data, today_data):
-    merged = []
-    today_dict = {item["Symbol"]: item for item in today_data}
-
-    for live in live_data:
-        symbol = live["Symbol"]
-        if symbol in today_dict:
+        if row_symbol.upper() == symbol.upper():
             try:
-                today = today_dict[symbol]
-                high = float(today["52 Week High"]) if today["52 Week High"] != "N/A" else None
-                low = float(today["52 Week Low"]) if today["52 Week Low"] != "N/A" else None
-                ltp = float(live["LTP"]) if live["LTP"] != "N/A" else None
+                day_high = float(cols[4].text.strip().replace(',', ''))
+                day_low = float(cols[5].text.strip().replace(',', ''))
+                closing_price = float(cols[6].text.strip().replace(',', ''))
+                change_percent = cols[14].text.strip()
+                volume = cols[8].text.strip()
+                turnover = cols[10].text.strip()
+                week_52_high = float(cols[19].text.strip().replace(',', ''))
+                week_52_low = float(cols[20].text.strip().replace(',', ''))
 
-                down_from_high = (high - ltp) / high * 100 if high and ltp else "N/A"
-                up_from_low = (ltp - low) / low * 100 if low and ltp else "N/A"
+                # Calculate Down From High and Up From Low
+                down_from_high = round(((week_52_high - closing_price) / week_52_high) * 100, 2)
+                up_from_low = round(((closing_price - week_52_low) / week_52_low) * 100, 2)
 
-                merged.append({
-                    "SN": today["SN"],
-                    "Symbol": symbol,
-                    "LTP": live["LTP"],
-                    "Change%": live["Change%"],
-                    "Day High": live["Day High"],
-                    "Day Low": live["Day Low"],
-                    "Previous Close": live["Previous Close"],
-                    "Volume": live["Volume"],
-                    "Turnover": today["Turnover"],
-                    "52 Week High": today["52 Week High"],
-                    "52 Week Low": today["52 Week Low"],
-                    "Down From High (%)": f"{down_from_high:.2f}" if isinstance(down_from_high, float) else "N/A",
-                    "Up From Low (%)": f"{up_from_low:.2f}" if isinstance(up_from_low, float) else "N/A"
-                })
-            except Exception as e:
-                print(f"Error processing data for symbol {symbol}: {e}")
-    return merged
+            except (ValueError, IndexError) as e:
+                # Handle missing or invalid data
+                print(f"Data processing error for symbol {symbol}: {e}")
+                week_52_high = "NA"
+                week_52_low = "NA"
+                down_from_high = "NA"
+                up_from_low = "NA"
 
-# Function to fetch stock data by symbol
-def fetch_stock_data_by_symbol(symbol):
-    live_data = scrape_live_trading()
-    today_data = scrape_today_share_price()
-    merged_data = merge_data(live_data, today_data)
+            # Handle color for change percentage
+            if "-" in change_percent:
+                change_percent = f"<b>{change_percent}%</b>"  # Red
+            elif "+" in change_percent:
+                change_percent = f"<b>{change_percent}%</b>"  # Green
+            else:
+                change_percent = f"<b>{change_percent}%</b>"
 
-    for stock in merged_data:
-        if stock["Symbol"] == symbol:
-            return stock
+            return {
+                'Symbol': symbol,
+                'Day High': day_high,
+                'Day Low': day_low,
+                'LTP': closing_price,
+                'Change Percent': change_percent,
+                'Volume': volume,
+                'Turnover': turnover,
+                '52 Week High': week_52_high,
+                '52 Week Low': week_52_low,
+                'Down From High': down_from_high,
+                'Up From Low': up_from_low
+            }
     return None
 
 # Start command handler
@@ -114,19 +99,21 @@ async def handle_stock_symbol(update: Update, context: ContextTypes.DEFAULT_TYPE
         response = (
             f"Stock Data for <b>{data['Symbol']}</b>:\n\n"
             f"LTP: {data['LTP']}\n"
-            f"Change Percent: {data['Change%']}\n"
+            f"Change Percent: {data['Change Percent']}\n"
             f"Day High: {data['Day High']}\n"
             f"Day Low: {data['Day Low']}\n"
             f"52 Week High: {data['52 Week High']}\n"
             f"52 Week Low: {data['52 Week Low']}\n"
             f"Volume: {data['Volume']}\n"
             f"Turnover: {data['Turnover']}\n"
-            f"Down From High: {data['Down From High (%)']}%\n"
-            f"Up From Low: {data['Up From Low (%)']}%\n\n"
-            f"Thank you for using my bot.\nPlease share with your friends and group."
+            f"Down From High: {data['Down From High']}%\n"
+            f"Up From Low: {data['Up From Low']}%\n\n"
+            "Thank you for using my bot. Please share it with your friends and groups."
         )
     else:
-        response = f"""Symbol '{symbol}'\n\nल्या, फेला परेन त हौं।🤗🤗\nSymbol मिलेन कि कारोबार बन्द छ?\nकृपया पुन: प्रयास गर्नुहोस💓।"""
+        response = f"""Symbol '{symbol}' not found, please try again later. 🧐
+        Symbol not recognized? Please check the spelling or use a valid stock symbol."""
+
     await update.message.reply_text(response, parse_mode=ParseMode.HTML)
 
 # Main function to set up the bot and run polling
@@ -143,3 +130,7 @@ if __name__ == "__main__":
     # Start polling
     print("Starting polling...")
     application.run_polling()
+
+    # Running Flask app to handle web traffic
+    port = int(os.getenv("PORT", 8080))  # Render's default port
+    app.run(host="0.0.0.0", port=port)
