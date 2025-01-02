@@ -1,39 +1,30 @@
-name: Deploy
+name: Auto Commit
 
 on:
-  push:
-    branches:
-      - main
+  schedule:
+    - cron: "*/15 * * * *" # Runs every 15 minutes
+  workflow_dispatch: # Allows manual trigger
 
 jobs:
-  deploy:
+  auto-commit:
     runs-on: ubuntu-latest
+
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Set up Git
       run: |
         git config --global user.email "apfsantosh@gmail.com"
         git config --global user.name "Syntu"
 
-    - name: Check for changes
-      id: check_changes
+    - name: Force Add and Commit
       run: |
-        if git diff --exit-code; then
-          echo "No changes to commit"
-          exit 0
-        fi
-
-    - name: Add and Commit changes
-      if: steps.check_changes.outcome != 'success'
-      run: |
-        git add .
-        git commit -m "Your commit message"
+        git add -A
+        git commit -m "Automated commit on $(date +'%Y-%m-%d %H:%M:%S')" || echo "No changes to commit"
 
     - name: Push changes
-      if: steps.check_changes.outcome != 'success'
       env:
         ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
       run: |
-        git push https://x-access-token:${{ secrets.ACTIONS_DEPLOY_KEY }}@github.com/Syntu/Copy-Working.git
+        git push --force
